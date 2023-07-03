@@ -1,10 +1,14 @@
 const tts = require("./index");
-tts.getVoices().then(inf => {
+const fs = require("fs");
+tts.getVoices().then(inf => { // get the voices
         console.log(inf);
         if (inf) {
-                Object.keys(inf.voices).forEach(i => {
+                for (const i in inf.voices) {
                         const info inf.voices[i];
-                        tts.genMp3(info.desc, 'test').then(console.log).catch(console.error);
-                });
+                        tts.genMp3(info.desc, 'test').then(buffer => { // generate an mp3 buffer
+                                console.log(buffer);
+                                if (buffer) fs.writeFileSync(`./files/${info.desc}.mp3`, buffer);
+                        }).catch(console.error);
+                }
         }
 }).catch(console.error);
