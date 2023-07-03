@@ -275,35 +275,40 @@ function getGenderPrefix(gender) { // there are only 2 genders. so this shouldn'
 module.exports = {
         getVoices() {
                 return new Promise((res, rej) => {
-                        var buffers = [];
-                        https.get(`https://support.readaloud.app/read-aloud/list-voices/premium`, (r) => {
-                                r.on("data", (d) => buffers.push(d)).on("end", async () => {
-                                        const json = JSON.parse(Buffer.concat(buffers));
-                                        const inf = {
-                                                voices: {},
-                                                languages: {}
-                                        };
-                                        for (const lang of allLanguages) inf.languages[lang[0]] = lang[1];
-                                        for (const info of json) {
-                                                const voiceName = info.voiceName.split("(")[1].split(")")[0];
-                                                inf.voices[voiceName.toLowerCase()] = {
-                                                        country: info.lang.split("-")[1],
-                                                        language: info.lang.split("-")[0],
-                                                        gender: getGenderPrefix(info.gender),
-                                                        arg: info.voiceName,
-                                                        lang: info.lang,
-                                                        desc: voiceName
+                        try {
+                                var buffers = [];
+                                https.get(`https://support.readaloud.app/read-aloud/list-voices/premium`, (r) => {
+                                        r.on("data", (d) => buffers.push(d)).on("end", async () => {
+                                                const json = JSON.parse(Buffer.concat(buffers));
+                                                const inf = {
+                                                        voices: {},
+                                                        languages: {}
+                                                };
+                                                for (const lang of allLanguages) inf.languages[lang[0]] = lang[1];
+                                                for (const info of json) {
+                                                        const voiceName = info.voiceName.split("(")[1].split(")")[0];
+                                                        inf.voices[voiceName.toLowerCase()] = {
+                                                                country: info.lang.split("-")[1],
+                                                                language: info.lang.split("-")[0],
+                                                                gender: getGenderPrefix(info.gender),
+                                                                arg: info.voiceName,
+                                                                lang: info.lang,
+                                                                desc: voiceName
+                                                        }
                                                 }
-                                        }
-                                        res(inf);
-                                });
-                        });
+                                                res(inf);
+                                        }).on("error", rej);
+                                }).on("error", rej);
+                        } catch (e) {
+                                rej(e);
+                        }
                 });
         },
         genMp3(voiceName, text) {
                 return new Promise(async (res, rej) => {
                         try {
-                                const voice = await this.getVoices().voices[voiceName];
+                                const info = await this.getVoices();
+                                const voice = info.voices[voiceName];
                                 https.request({
                                         hostname: "support.readaloud.app",
                                         path: "/ttstool/createParts",
