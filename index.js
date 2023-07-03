@@ -1,376 +1,342 @@
-var Promise = global.Promise || require('es6-promise');
-var zlib = require('zlib'), stream = require('stream');
-
-
-exports.ZipFile = ZipFile;
-exports.ZipEntry = ZipEntry;
-function ZipFile() {}
-
-/**
- * Adds zip entry
- *
- * @param{string} name file name, must be valid path name
- * @param{Buffer} buffer
- * @param{Object} options
- */
-ZipFile.prototype.add = function (name, buffer, options) {
-    name = String(name);
-    if (!/^[^/]+(?:\/[^\/]+)*/.test(name)) {
-        throw new Error('Bad entry name: ' + name);
-    }
-    addDirEntry(this, name);
-    var entry = this[name] = new ZipEntry(name, options);
-    entry.buffer = buffer;
-    entry.originalSize = buffer.length;
-    entry.crc32 = crc32(buffer);
-
-    if (entry.noCompress) {
-        entry.compressed = buffer;
-    }
-};
-
-function addDirEntry(file, name) {
-    var idx = name.lastIndexOf('/') + 1;
-    if (!idx) return;
-    var parent = name.substr(0, idx);
-    if (parent in file) return;
-    var entry = file[parent] = new ZipEntry(parent);
-    entry.isDir = true;
-    addDirEntry(file, parent.substr(0, idx - 1));
+const https = require("https");
+const allLanguages = [
+  ["bo", "Boro", "à¤¬à¤¡à¤¼"],
+  ["aa", "Afar", "Afar"],
+  ["ab", "Abkhazian", "ÐÒ§ÑÑƒÐ°"],
+  ["af", "Afrikaans", "Afrikaans"],
+  ["ak", "Akan", "Akana"],
+  ["als", "Alemannic", "Alemannisch"],
+  ["am", "Amharic", "áŠ áˆ›áˆ­áŠ›"],
+  ["an", "Aragonese", "AragonÃ©s"],
+  ["ang", "Angal", "Angal Heneng"],
+  ["ang", "Anglo-SaxonÂ / Old English", "Englisc"],
+  ["ar", "Arabic", "Ø§Ù„Ø¹Ø±Ø¨ÙŠØ©"],
+  ["arc", "Aramaic", "Ü£Ü˜ÜªÜ¬"],
+  ["as", "Assamese", "à¦…à¦¸à¦®à§€à¦¯à¦¼à¦¾"],
+  ["ast", "Asturian", "Asturianu"],
+  ["av", "Avar", "ÐÐ²Ð°Ñ€"],
+  ["awa", "Awadhi", "Awadhi"],
+  ["ay", "Aymara", "Aymar"],
+  ["az", "Azerbaijani", "AzÉ™rbaycanca / Ø¢Ø°Ø±Ø¨Ø§ÙŠØ¬Ø§Ù†"],
+  ["ba", "Bashkir", "Ð‘Ð°ÑˆÒ¡Ð¾Ñ€Ñ‚"],
+  ["bar", "Bavarian", "Boarisch"],
+  ["bat-smg", "Samogitian", "Å½emaitÄ—Å¡ka"],
+  ["bcl", "Bikol", "Bikol Central"],
+  ["be", "Belarusian", "Ð‘ÐµÐ»Ð°Ñ€ÑƒÑÐºÐ°Ñ"],
+  ["be-x-old", "Belarusian (TaraÅ¡kievica)", "Ð‘ÐµÐ»Ð°Ñ€ÑƒÑÐºÐ°Ñ (Ñ‚Ð°Ñ€Ð°ÑˆÐºÐµÐ²Ñ–Ñ†Ð°)"],
+  ["bg", "Bulgarian", "Ð‘ÑŠÐ»Ð³Ð°Ñ€ÑÐºÐ¸"],
+  ["bh", "Bihari", "à¤­à¥‹à¤œà¤ªà¥à¤°à¥€"],
+  ["bi", "Bislama", "Bislama"],
+  ["bm", "Bambara", "Bamanankan"],
+  ["bn", "Bengali", "à¦¬à¦¾à¦‚à¦²à¦¾"],
+  ["bo", "Tibetan", "à½–à½¼à½‘à¼‹à½¡à½²à½‚Â / Bod skad"],
+  ["bpy", "Bishnupriya Manipuri", "à¦‡à¦®à¦¾à¦° à¦ à¦¾à¦°/à¦¬à¦¿à¦·à§à¦£à§à¦ªà§à¦°à¦¿à¦¯à¦¼à¦¾ à¦®à¦£à¦¿à¦ªà§à¦°à§€"],
+  ["br", "Breton", "Brezhoneg"],
+  ["bs", "Bosnian", "Bosanski"],
+  ["bug", "Buginese", "á¨…á¨” á¨•á¨˜á¨á¨—Â / Basa Ugi"],
+  ["bxr", "Buriat (Russia)", "Ð‘ÑƒÑ€ÑÐ°Ð´ Ñ…ÑÐ»ÑÐ½"],
+  ["ca", "Catalan", "CatalÃ "],
+  ["cdo", "Min Dong Chinese", "MÃ¬ng-dÄ•Ì¤ng-ngá¹³Ì„ / é–©æ±èªž"],
+  ["ce", "Chechen", "ÐÐ¾Ñ…Ñ‡Ð¸Ð¹Ð½"],
+  ["ceb", "Cebuano", "Sinugboanong Binisaya"],
+  ["ch", "Chamorro", "Chamoru"],
+  ["cho", "Choctaw", "Choctaw"],
+  ["chr", "Cherokee", "á£áŽ³áŽ©"],
+  ["chy", "Cheyenne", "TsetsÃªhestÃ¢hese"],
+  ["ckb", "Kurdish (Sorani)", "Ú©ÙˆØ±Ø¯ÛŒ"],
+  ["co", "Corsican", "Corsu"],
+  ["cr", "Cree", "Nehiyaw"],
+  ["cs", "Czech", "ÄŒesky"],
+  ["csb", "Kashubian", "KaszÃ«bsczi"],
+  ["cu", "Old Church SlavonicÂ / Old Bulgarian", "ÑÐ»Ð¾Ð²Ñ£Ð½ÑŒÑÐºÑŠÂ / slovÄ›nÄ­skÅ­"],
+  ["cv", "Chuvash", "Ð§ÄƒÐ²Ð°Ñˆ"],
+  ["cy", "Welsh", "Cymraeg"],
+  ["da", "Danish", "Dansk"],
+  ["de", "German", "Deutsch"],
+  ["diq", "Dimli", "Zazaki"],
+  ["dsb", "Lower Sorbian", "Dolnoserbski"],
+  ["dv", "Divehi", "Þ‹Þ¨ÞˆÞ¬Þ€Þ¨Þ„Þ¦ÞÞ°"],
+  ["dz", "Dzongkha", "à½‡à½¼à½„à¼‹à½"],
+  ["ee", "Ewe", "ÆÊ‹É›"],
+  ["el", "Greek", "Î•Î»Î»Î·Î½Î¹ÎºÎ¬"],
+  ["en", "English", "English"],
+  ["eo", "Esperanto", "Esperanto"],
+  ["es", "Spanish", "EspaÃ±ol"],
+  ["et", "Estonian", "Eesti"],
+  ["eu", "Basque", "Euskara"],
+  ["ext", "Extremaduran", "EstremeÃ±u"],
+  ["fa", "Persian", "ÙØ§Ø±Ø³ÛŒ"],
+  ["ff", "Peul", "Fulfulde"],
+  ["fi", "Finnish", "Suomi"],
+  ["fiu-vro", "VÃµro", "VÃµro"],
+  ["fj", "Fijian", "Na Vosa Vakaviti"],
+  ["fo", "Faroese", "FÃ¸royskt"],
+  ["fr", "French", "FranÃ§ais"],
+  ["frp", "ArpitanÂ / Franco-ProvenÃ§al", "ArpitanÂ / francoprovenÃ§al"],
+  ["fur", "Friulian", "Furlan"],
+  ["fy", "West Frisian", "Frysk"],
+  ["ga", "Irish", "Gaeilge"],
+  ["gan", "Gan Chinese", "è´›èªž"],
+  ["gbm", "Garhwali", "à¤—à¤¢à¤¼à¤µà¤³à¥€"],
+  ["gd", "Scottish Gaelic", "GÃ idhlig"],
+  ["gil", "Gilbertese", "Taetae ni kiribati"],
+  ["gl", "Galician", "Galego"],
+  ["gn", "Guarani", "AvaÃ±e'áº½"],
+  ["got", "Gothic", "gutisk"],
+  ["gu", "Gujarati", "àª—à«àªœàª°àª¾àª¤à«€"],
+  ["gv", "Manx", "Gaelg"],
+  ["ha", "Hausa", "Ù‡ÙŽÙˆÙØ³ÙŽ"],
+  ["hak", "Hakka Chinese", "å®¢å®¶èªž/Hak-kÃ¢-ngÃ®"],
+  ["haw", "Hawaiian", "Hawai`i"],
+  ["he", "Hebrew", "×¢×‘×¨×™×ª"],
+  ["hi", "Hindi", "à¤¹à¤¿à¤¨à¥à¤¦à¥€"],
+  ["ho", "Hiri Motu", "Hiri Motu"],
+  ["hr", "Croatian", "Hrvatski"],
+  ["ht", "Haitian", "KrÃ¨yol ayisyen"],
+  ["hu", "Hungarian", "Magyar"],
+  ["hy", "Armenian", "Õ€Õ¡ÕµÕ¥Ö€Õ¥Õ¶"],
+  ["hz", "Herero", "Otsiherero"],
+  ["ia", "Interlingua", "Interlingua"],
+  ["id", "Indonesian", "Bahasa Indonesia"],
+  ["ie", "Interlingue", "Interlingue"],
+  ["ig", "Igbo", "Igbo"],
+  ["ii", "Sichuan Yi", "ê†‡ê‰™Â / å››å·å½è¯­"],
+  ["ik", "Inupiak", "IÃ±upiak"],
+  ["ilo", "Ilokano", "Ilokano"],
+  ["inh", "Ingush", "Ð“Ó€Ð°Ð»Ð³Ó€Ð°Ð¹"],
+  ["io", "Ido", "Ido"],
+  ["is", "Icelandic", "Ãslenska"],
+  ["it", "Italian", "Italiano"],
+  ["iu", "Inuktitut", "áƒá“„á’ƒá‘Žá‘á‘¦"],
+  ["ja", "Japanese", "æ—¥æœ¬èªž"],
+  ["jbo", "Lojban", "Lojban"],
+  ["jv", "Javanese", "Basa Jawa"],
+  ["ka", "Georgian", "áƒ¥áƒáƒ áƒ—áƒ£áƒšáƒ˜"],
+  ["kg", "Kongo", "KiKongo"],
+  ["ki", "Kikuyu", "GÄ©kÅ©yÅ©"],
+  ["kj", "Kuanyama", "Kuanyama"],
+  ["kk", "Kazakh", "ÒšÐ°Ð·Ð°Ò›ÑˆÐ°"],
+  ["kl", "Greenlandic", "Kalaallisut"],
+  ["km", "Cambodian", "áž—áž¶ážŸáž¶ážáŸ’áž˜áŸ‚ážš"],
+  ["kn", "Kannada", "à²•à²¨à³à²¨à²¡"],
+  ["khw", "Khowar", "Ú©Ú¾ÙˆØ§Ø±"],
+  ["ko", "Korean", "í•œêµ­ì–´"],
+  ["kr", "Kanuri", "Kanuri"],
+  ["ks", "Kashmiri", "à¤•à¤¶à¥à¤®à¥€à¤°à¥€Â / ÙƒØ´Ù…ÙŠØ±ÙŠ"],
+  ["ksh", "Ripuarian", "Ripoarisch"],
+  ["ku", "Kurdish (Kurmanji)", "KurdÃ®"],
+  ["kv", "Komi", "ÐšÐ¾Ð¼Ð¸"],
+  ["kw", "Cornish", "Kernewek"],
+  ["ky", "Kirghiz", "KÄ±rgÄ±zcaÂ / ÐšÑ‹Ñ€Ð³Ñ‹Ð·Ñ‡Ð°"],
+  ["la", "Latin", "Latina"],
+  ["lad", "LadinoÂ / Judeo-Spanish", "DzhudezmoÂ / Djudeo-Espanyol"],
+  ["lan", "Lango", "Leb LangoÂ / Luo"],
+  ["lb", "Luxembourgish", "LÃ«tzebuergesch"],
+  ["lg", "Ganda", "Luganda"],
+  ["li", "Limburgian", "Limburgs"],
+  ["lij", "Ligurian", "LÃ­guru"],
+  ["lmo", "Lombard", "Lumbaart"],
+  ["ln", "Lingala", "LingÃ¡la"],
+  ["lo", "Laotian", "àº¥àº²àº§Â / Pha xa lao"],
+  ["lzz", "Laz", "Lazuri / áƒšáƒáƒ–áƒ£áƒ áƒ˜"],
+  ["lt", "Lithuanian", "LietuviÅ³"],
+  ["lv", "Latvian", "LatvieÅ¡u"],
+  ["map-bms", "Banyumasan", "Basa Banyumasan"],
+  ["mg", "Malagasy", "Malagasy"],
+  ["man", "Mandarin", "å®˜è©±/å®˜è¯"],
+  ["mh", "Marshallese", "Kajin MajelÂ / Ebon"],
+  ["mi", "Maori", "MÄori"],
+  ["min", "Minangkabau", "Minangkabau"],
+  ["mk", "Macedonian", "ÐœÐ°ÐºÐµÐ´Ð¾Ð½ÑÐºÐ¸"],
+  ["ml", "Malayalam", "à´®à´²à´¯à´¾à´³à´‚"],
+  ["mn", "Mongolian", "ÐœÐ¾Ð½Ð³Ð¾Ð»"],
+  ["mo", "Moldovan", "MoldoveneascÄƒ"],
+  ["mr", "Marathi", "à¤®à¤°à¤¾à¤ à¥€"],
+  ["mrh", "Mara", "Mara"],
+  ["ms", "Malay", "Bahasa Melayu"],
+  ["mt", "Maltese", "bil-Malti"],
+  ["mus", "CreekÂ / Muskogee", "Mvskoke"],
+  ["mwl", "Mirandese", "MirandÃ©s"],
+  ["my", "Burmese", "Myanmasa"],
+  ["na", "Nauruan", "Dorerin Naoero"],
+  ["nah", "Nahuatl", "Nahuatl"],
+  ["nap", "Neapolitan", "Nnapulitano"],
+  ["nd", "North Ndebele", "Sindebele"],
+  ["nds", "Low GermanÂ / Low Saxon", "PlattdÃ¼Ã¼tsch"],
+  ["nds-nl", "Dutch Low Saxon", "Nedersaksisch"],
+  ["ne", "Nepali", "à¤¨à¥‡à¤ªà¤¾à¤²à¥€"],
+  ["new", "Newar", "à¤¨à¥‡à¤ªà¤¾à¤²à¤­à¤¾à¤·à¤¾Â / Newah Bhaye"],
+  ["ng", "Ndonga", "Oshiwambo"],
+  ["nl", "Dutch", "Nederlands"],
+  ["nn", "Norwegian Nynorsk", "Norsk (nynorsk)"],
+  ["no", "Norwegian", "Norsk (bokmÃ¥lÂ / riksmÃ¥l)"],
+  ["nr", "South Ndebele", "isiNdebele"],
+  ["nso", "Northern Sotho", "Sesotho sa LeboaÂ / Sepedi"],
+  ["nrm", "Norman", "NouormandÂ / Normaund"],
+  ["nv", "Navajo", "DinÃ© bizaad"],
+  ["ny", "Chichewa", "Chi-Chewa"],
+  ["oc", "Occitan", "Occitan"],
+  ["oj", "Ojibwa", "áŠá“‚á”‘á“ˆá¯á’§áŽá“Â / Anishinaabemowin"],
+  ["om", "Oromo", "Oromoo"],
+  ["or", "Oriya", "à¬“à¬¡à¬¼à¬¿à¬†"],
+  ["os", "OssetianÂ / Ossetic", "Ð˜Ñ€Ð¾Ð½Ð°Ñƒ"],
+  ["pa", "PanjabiÂ / Punjabi", "à¨ªà©°à¨œà¨¾à¨¬à©€Â / à¤ªà¤‚à¤œà¤¾à¤¬à¥€Â / Ù¾Ù†Ø¬Ø§Ø¨ÙŠ"],
+  ["pag", "Pangasinan", "Pangasinan"],
+  ["pam", "Kapampangan", "Kapampangan"],
+  ["pap", "Papiamentu", "Papiamentu"],
+  ["pdc", "Pennsylvania German", "Deitsch"],
+  ["pi", "Pali", "PÄliÂ / à¤ªà¤¾à¤´à¤¿"],
+  ["pih", "Norfolk", "Norfuk"],
+  ["pl", "Polish", "Polski"],
+  ["pms", "Piedmontese", "PiemontÃ¨is"],
+  ["ps", "Pashto", "Ù¾ÚšØªÙˆ"],
+  ["pt", "Portuguese", "PortuguÃªs"],
+  ["qu", "Quechua", "Runa Simi"],
+  ["rm", "Raeto Romance", "Rumantsch"],
+  ["rmy", "Romani", "RomaniÂ / à¤°à¥‹à¤®à¤¾à¤¨à¥€"],
+  ["rn", "Kirundi", "Kirundi"],
+  ["ro", "Romanian", "RomÃ¢nÄƒ"],
+  ["roa-rup", "Aromanian", "ArmÃ¢neashti"],
+  ["ru", "Russian", "Ð ÑƒÑÑÐºÐ¸Ð¹"],
+  ["rw", "Rwandi", "Kinyarwandi"],
+  ["sa", "Sanskrit", "à¤¸à¤‚à¤¸à¥à¤•à¥ƒà¤¤à¤®à¥"],
+  ["sc", "Sardinian", "Sardu"],
+  ["scn", "Sicilian", "Sicilianu"],
+  ["sco", "Scots", "Scots"],
+  ["sd", "Sindhi", "à¤¸à¤¿à¤¨à¤§à¤¿"],
+  ["se", "Northern Sami", "DavvisÃ¡megiella"],
+  ["sg", "Sango", "SÃ¤ngÃ¶"],
+  ["sh", "Serbo-Croatian", "SrpskohrvatskiÂ / Ð¡Ñ€Ð¿ÑÐºÐ¾Ñ…Ñ€Ð²Ð°Ñ‚ÑÐºÐ¸"],
+  ["si", "Sinhalese", "à·ƒà·’à¶‚à·„à¶½"],
+  ["sk", "Slovak", "SlovenÄina"],
+  ["sl", "Slovenian", "SlovenÅ¡Äina"],
+  ["sm", "Samoan", "Gagana Samoa"],
+  ["sn", "Shona", "chiShona"],
+  ["so", "Somalia", "Soomaaliga"],
+  ["sq", "Albanian", "Shqip"],
+  ["sr", "Serbian", "Ð¡Ñ€Ð¿ÑÐºÐ¸"],
+  ["ss", "Swati", "SiSwati"],
+  ["st", "Southern Sotho", "Sesotho"],
+  ["su", "Sundanese", "Basa Sunda"],
+  ["sv", "Swedish", "Svenska"],
+  ["sw", "Swahili", "Kiswahili"],
+  ["ta", "Tamil", "à®¤à®®à®¿à®´à¯"],
+  ["te", "Telugu", "à°¤à±†à°²à±à°—à±"],
+  ["tet", "Tetum", "Tetun"],
+  ["tg", "Tajik", "Ð¢Ð¾Ò·Ð¸ÐºÓ£"],
+  ["th", "Thai", "à¹„à¸—à¸¢Â / Phasa Thai"],
+  ["ti", "Tigrinya", "á‰µáŒáˆ­áŠ›"],
+  ["tk", "Turkmen", "Ð¢ÑƒÑ€ÐºÐ¼ÐµÐ½Â / ØªØ±ÙƒÙ…Ù†"],
+  ["tl", "Tagalog", "Tagalog"],
+  ["tlh", "Klingon", "tlhIngan-Hol"],
+  ["tn", "Tswana", "Setswana"],
+  ["to", "Tonga", "Lea Faka-Tonga"],
+  ["tpi", "Tok Pisin", "Tok Pisin"],
+  ["tr", "Turkish", "TÃ¼rkÃ§e"],
+  ["ts", "Tsonga", "Xitsonga"],
+  ["tt", "Tatar", "TatarÃ§a"],
+  ["tum", "Tumbuka", "chiTumbuka"],
+  ["tw", "Twi", "Twi"],
+  ["ty", "Tahitian", "Reo MÄ`ohi"],
+  ["udm", "Udmurt", "Ð£Ð´Ð¼ÑƒÑ€Ñ‚ ÐºÑ‹Ð»"],
+  ["ug", "Uyghur", "UyÆ£urqÉ™Â / Ø¦Û‡ÙŠØºÛ‡Ø±Ú†Û•"],
+  ["uk", "Ukrainian", "Ð£ÐºÑ€Ð°Ñ—Ð½ÑÑŒÐºÐ°"],
+  ["ur", "Urdu", "Ø§Ø±Ø¯Ùˆ"],
+  ["uz", "Uzbek", "ÐŽÐ·Ð±ÐµÐº"],
+  ["uz_AF", "Uzbeki Afghanistan", "Ø§ÙˆØ²Ø¨ÛŒÚ©ÛŒ"],
+  ["ve", "Venda", "Tshivená¸“a"],
+  ["vi", "Vietnamese", "Viá»‡tnam"],
+  ["vec", "Venetian", "VÃ¨neto"],
+  ["vls", "West Flemish", "West-Vlaoms"],
+  ["vo", "VolapÃ¼k", "VolapÃ¼k"],
+  ["wa", "Walloon", "Walon"],
+  ["war", "WarayÂ / Samar-Leyte Visayan", "WinarayÂ / Binisaya Lineyte-Samarnon"],
+  ["wo", "Wolof", "Wollof"],
+  ["xal", "Kalmyk", "Ð¥Ð°Ð»ÑŒÐ¼Ð³"],
+  ["xh", "Xhosa", "isiXhosa"],
+  ["xmf", "Megrelian", "áƒ›áƒáƒ áƒ’áƒáƒšáƒ£áƒ áƒ˜"],
+  ["yi", "Yiddish", "×™×™Ö´×“×™×©"],
+  ["yo", "Yoruba", "YorÃ¹bÃ¡"],
+  ["za", "Zhuang", "CuenghÂ / TÃ´Ã´Â / å£®è¯­"],
+  ["zh", "Chinese", "ä¸­æ–‡"],
+  ["zh-classical", "Classical Chinese", "æ–‡è¨€"],
+  ["zh-min-nan", "Minnan", "BÃ¢n-lÃ¢m-gÃº"],
+  ["zh-yue", "Cantonese", "ç²µèªžÂ / ç²¤è¯­"],
+  ["zu", "Zulu", "isiZulu"],
+  ["nb", "Norwegian BokmÃ¥l", "Norsk (bokmÃ¥l)"],
+  ["zh-tw", "Traditional Chinese", "â€ªä¸­æ–‡(å°ç£)â€¬"],
+]
+function getGenderPrefix(gender) { // there are only 2 genders. so this shouldn't be hard.
+        switch (gender) {
+                case "female": return "F";
+                case "male": return "M";
+        }
 }
-
-ZipFile.prototype.zip = function () {
-    var self = this;
-    var names = Object.keys(this);
-    return Promise.all(names.map(function (name) {
-        try {
-            return self[name]._compress();
-        } catch (e) {
-            console.error(e.message, name, self[name]);
-
-            throw e;
-        }
-    })).then(function (zippedEntries) {
-        // TODO build zip file
-        var fileLen = 0;
-        var nameBufs = [];
-        for (var i = 0, L = names.length; i < L; i++) {
-            var nameBuf = nameBufs[i] = new Buffer(names[i]), zippedBuf = zippedEntries[i];
-            fileLen += (nameBuf.length << 1) + (zippedBuf ? zippedBuf.length : 0); // CONSTANT
-        }
-        fileLen += L * 76 + 22;
-        var dest = new Buffer(fileLen), offset = 0;
-
-        // write entries
-        for (i = 0; i < L; i++) {
-            var entry = self[names[i]];
-            var options = entry.options;
-            nameBuf = nameBufs[i];
-            zippedBuf = zippedEntries[i];
-            entry.offset = offset;
-            offset = dest.writeUInt32BE(0x504B0304, offset, true); // 'PK',03,04
-            offset = dest.writeUInt32BE(0, offset, true); // version needed to extract the file | flags
-            offset = dest.writeUInt16LE(entry.noCompress ? 0 : 8, offset, true); // compress method
-            offset = dest.writeUInt32LE(0, offset, true); // date and time
-            offset = dest.writeUInt32LE(entry.crc32, offset, true); // crc32
-            offset = dest.writeUInt32LE(entry.isDir ? 0 : zippedBuf.length, offset, true); // compressed size
-            offset = dest.writeUInt32LE(entry.originalSize, offset, true); // uncompressed size
-            offset = dest.writeUInt16LE(nameBuf.length, offset, true); // filename len
-            offset = dest.writeUInt16LE(0, offset, true); // extra field length
-
-            nameBuf.copy(dest, offset);
-            offset += nameBuf.length;
-            if (zippedBuf) {
-                zippedBuf.copy(dest, offset);
-                offset += zippedBuf.length;
-            }
-        }
-        var directoryOffset = offset;
-        // write central directory
-        for (i = 0; i < L; i++) {
-            entry = self[names[i]];
-            options = entry.options;
-            nameBuf = nameBufs[i];
-            zippedBuf = zippedEntries[i];
-            offset = dest.writeUInt32BE(0x504B0102, offset, true); // 'PK',01,02
-            offset = dest.writeUInt32BE(0, offset, true); // version made by | version needed to extract
-            offset = dest.writeUInt16LE(0, offset, true); // flags
-            offset = dest.writeUInt16LE(entry.noCompress ? 0 : 8, offset, true); // compress method
-            offset = dest.writeUInt32LE(0, offset, true); // date and time
-            offset = dest.writeUInt32LE(entry.crc32, offset, true); // crc32
-            offset = dest.writeUInt32LE(zippedBuf ? zippedBuf.length : 0, offset, true); // compressed size
-            offset = dest.writeUInt32LE(entry.originalSize, offset, true); // uncompressed size
-            offset = dest.writeUInt16LE(nameBuf.length, offset, true); // filename len
-            offset = dest.writeUInt32LE(0, offset, true); // extra field length | file comment length
-            offset = dest.writeUInt32LE(0, offset, true); // disk number | internal attribute
-            offset = dest.writeUInt32LE(0, offset, true); // external attributes
-            offset = dest.writeUInt32LE(entry.offset, offset, true); // entry offset
-
-            nameBuf.copy(dest, offset);
-            offset += nameBuf.length;
-        }
-        // end of central directory
-        var directoryLen = offset - directoryOffset;
-        offset = dest.writeUInt32BE(0x504B0506, offset, true); // 'PK',05,06
-        offset = dest.writeUInt32LE(0, offset, true);
-        offset = dest.writeUInt16LE(L, offset, true);
-        offset = dest.writeUInt16LE(L, offset, true); // number of central directory records
-        offset = dest.writeUInt32LE(directoryLen, offset, true); // number of central directory records
-        offset = dest.writeUInt32LE(directoryOffset, offset, true); // number of central directory records
-        offset = dest.writeUInt16LE(0, offset, true); // comment length
-        return dest;
-    });
-};
-
-ZipFile.prototype.entries = function () {
-    var keys = Object.keys(this), cursor = 0, len = keys.length, self = this;
-    var ret = {
-        next: function () {
-            if (cursor === len) {
-                return {done: true}
-            } else {
-                var key = keys[cursor++];
-                return {done: false, value: [key, self[key]]}
-            }
-        }
-    };
-    if (typeof Symbol === 'function' && Symbol.iterator) {
-        ret[Symbol.iterator] = function () {
-            return ret
-        }
-    }
-    return ret;
-};
-
-if (typeof Symbol === 'function' && Symbol.iterator) {
-    ZipFile.prototype[Symbol.iterator] = function () {
-        var keys = Object.keys(this), cursor = 0, len = keys.length, self = this;
-        return {
-            next: function () {
-                if (cursor === len) {
-                    return {done: true}
-                } else {
-                    var key = keys[cursor++];
-                    return {done: false, value: self[key]}
-                }
-            }
-        };
-    }
-}
-
-/**
- * default close method, do nothing
- */
-ZipFile.prototype.close = function () {
-};
-
-ZipFile.prototype._closeHook = function (cb) {
-    var _close = this.close;
-    Object.defineProperty(this, 'close', {
-        enumurable: false,
-        configurable: true,
-        value: function () {
-            cb.call(this);
-            _close.call(this);
-        }
-    });
-    return this;
-};
-
-function ZipEntry(name, options) {
-    this.name = name;
-    this.options = options;
-    if (this.noCompress = options && options.compressed === false) {
-        options.level = 0;
-    }
-
-    this.buffer = this.compressed = null;
-    this.originalSize = this.crc32 = 0;
-    this._deflatePending = this._inflatePending = null;
-    this.isDir = false;
-}
-
-ZipEntry.prototype.inflate = function () {
-    if (this.buffer) { // uncompressed
-        return Promise.resolve(this.buffer);
-    }
-    if (this._inflatePending) {
-        return this._inflatePending;
-    }
-    var self = this;
-
-    return this._inflatePending = new Promise(function (resolve) {
-        var bufs = [];
-        self.toReadStream().on('data', bufs.push.bind(bufs)).on('end', function () {
-            self._inflatePending = null;
-            resolve(Buffer.concat(bufs))
-        });
-    })
-};
-
-ZipEntry.prototype.toReadStream = function () {
-    if (this.buffer) { // uncompressed
-        var ret = new stream.Readable;
-        ret.push(this.buffer);
-        ret.push(null);
-        return ret;
-    }
-    ret = zlib.createInflateRaw();
-    this.pipe(ret);
-    return ret;
-};
-
-ZipEntry.prototype._read = function () {
-};
-
-ZipEntry.prototype.pipe = function (writable) {
-    var buf;
-    if (this.compressed && !this.noCompress) {
-        buf = this.compressed;
-    } else if (this.buffer) { // from uncompressed
-        var transform = zlib.createDeflateRaw(this.options);
-        transform.pipe(writable);
-        buf = this.buffer;
-        writable = transform;
-    } else {
-        buf = this.compressed = this._read();
-        delete this._read;
-    }
-    writable.write(buf);
-    writable.end();
-};
-
-ZipEntry.prototype._compress = function () {
-    if (this.isDir) {
-        return null;
-    }
-    var compressed = this.compressed;
-    if (compressed) {
-        return Promise.resolve(compressed);
-    }
-    if (this._deflatePending) {
-        return this._deflatePending;
-    }
-    var self = this;
-    return this._deflatePending = new Promise(function (resolve, reject) {
-        zlib.deflateRaw(self.buffer, self.options, function (err, buf) {
-            if (err) {
-                reject(err);
-            } else {
-                self._deflatePending = null;
-                resolve(self.compressed = buf);
-            }
-        });
-    });
-};
-
-
-// .zip file format parser
-// Supply  a reader method to read from supplied buffer
-function zipFile(fileLength, read, readAll) {
-    var buf = read(fileLength - 22, 22);
-    // read tail chunk
-
-    if (buf.readUInt32BE(0) !== 0x504B0506) {
-        throw new Error("Bad zip file format");
-    }
-
-    var dirsLength = buf.readUInt32LE(12, true),
-        dirsOffset = buf.readUInt32LE(16, true);
-    buf = read(dirsOffset, dirsLength);
-
-    var ret = new ZipFile();
-
-    for (var pos = 0, nextPos; pos < dirsLength; pos = nextPos) {
-        if (buf.readUInt32BE(pos) !== 0x504B0102) { // read dir
-            throw new Error("Bad zip file chunk");
-        }
-        var nameLen = buf.readUInt16LE(pos + 28);
-        var name = buf.slice(pos + 46, pos + 46 + nameLen).toString(),
-            isDir = name[name.length - 1] === '/',
-            extraLen = buf.readUInt16LE(pos + 30),
-            commentLen = buf.readUInt16LE(pos + 32);
-        nextPos = pos + 46 + nameLen + extraLen + commentLen;
-        //if (isDir) continue;
-
-        var compressed = buf[pos + 10] !== 0;
-        var entry = ret[name] = new ZipEntry(name, compressed ? null : {
-            compressed: false
-        });
-
-        if (isDir) {
-            entry.isDir = true;
-            entry.crc32 = 0;
-            entry.originalSize = 0;
-        } else {
-            entry.crc32 = buf.readUInt32LE(pos + 16);
-            entry.originalSize = buf.readUInt32LE(pos + 24);
-            var offset = buf.readUInt32LE(pos + 42) + 28,
-                length = buf.readUInt32LE(pos + 20);
-            offset += 2 + nameLen + read(offset, 2).readUInt16LE(0, true);
-
-            if (readAll) {
-                entry.compressed = read(offset, length);
-                if (!compressed) {
-                    entry.buffer = entry.compressed;
-                }
-            } else {
-                entry._read = read.bind(null, offset, length);
-            }
-        }
-
-    }
-    return ret;
-}
-var crc_table = new Uint32Array(256);
-
-for (var i = 0; i < 256; i++) {
-    var c = i;
-    for (var j = 0; j < 8; j++) {
-        var cr = c & 1;
-        c = c >> 1 & 0x7FFFFFFF;
-        if (cr) {
-            c ^= 0xedb88320;
-        }
-    }
-    crc_table[i] = c;
-}
-
-function crc32(arr) {
-    var crc = -1;
-    for (var i = 0, end = arr.length; i < end; i++) {
-        crc = crc_table[crc & 0xFF ^ arr[i]] ^ (crc >> 8 & 0xFFFFFF);
-    }
-    return ~crc;
-}
-var fs = require('fs');
 module.exports = {
-    create(map) {
-        var ret = new ZipFile();
-        if (map && typeof map === 'object') {
-            for (var keys = Object.keys(map), i = 0, L = keys.length; i < L; i++) ret.add(keys[i], map[keys[i]]);
+        getVoices() {
+                return new Promise((res, rej) => {
+                        var buffers = [];
+                        https.get(`https://support.readaloud.app/read-aloud/list-voices/premium`, (r) => {
+                                r.on("data", (d) => buffers.push(d)).on("end", async () => {
+                                        const json = JSON.parse(Buffer.concat(buffers));
+                                        const inf = {
+                                                voices: {},
+                                                languages: {}
+                                        };
+                                        for (const lang of allLanguages) inf.languages[lang[0]] = lang[1];
+                                        for (const info of json) {
+                                                const voiceName = info.voiceName.split("(")[1].split(")")[0];
+                                                inf.voices[voiceName.toLowerCase()] = {
+                                                        country: info.lang.split("-")[1],
+                                                        language: info.lang.split("-")[0],
+                                                        gender: getGenderPrefix(info.gender),
+                                                        arg: info.voiceName,
+                                                        lang: info.lang,
+                                                        desc: voiceName
+                                                }
+                                        }
+                                        res(inf);
+                                });
+                        });
+                });
+        },
+        genMp3(voiceName, text) {
+                return new Promise(async (res, rej) => {
+                        try {
+                                const voice = await this.getVoices().voices[voiceName];
+                                https.request({
+                                        hostname: "support.readaloud.app",
+                                        path: "/ttstool/createParts",
+                                        method: "POST",
+                                        headers: {
+                                                "Content-Type": "application/json",
+                                        },
+                                }, (r) => {
+                                        let buffers = [];
+                                        r.on("data", (d) => buffers.push(d)).on("error", rej).on("end", () => {
+                                                https.get({
+                                                        hostname: "support.readaloud.app",
+							path: `/ttstool/getParts?q=${JSON.parse(Buffer.concat(buffers))[0]}`,
+							headers: {
+                                                                "Content-Type": "audio/mp3"
+                                                        }
+						}, (r) => {
+							let buffers = [];
+							r
+                                                                .on("data", (b) => buffers.push(b))
+                                                                .on("end", () => res(Buffer.concat(buffers)))
+                                                                .on("error", rej);
+                                                }).on("error", rej);
+                                        });
+                                }).end(JSON.stringify([
+                                        {
+                                                voiceId: voice.arg,
+                                                ssml: `<speak version="1.0" xml:lang="${voice.lang}">${text}</speak>`
+                                        }
+                                ])).on("error", rej);
+                        } catch (e) {
+                                rej(e);
+                        }
+                });
         }
-        return ret
-    },
-    /**
-     *
-     * @param file a filename, or a fd, or a buffer
-     * @returns {*}
-     */
-    unzip(file) {
-        if (typeof file === 'string') file = fs.openSync(file, 'r');
-        if (typeof file === 'number') {
-            return zipFile(fs.fstatSync(file).size, function (offset, length) {
-                var buf = new Buffer(length);
-                for (var red = 0; red < length;) red += fs.readSync(file, buf, red, length - red, offset + red);
-                return buf;
-            }, false)._closeHook(function () {
-                fs.closeSync(file);
-            });
-        } else if (Buffer.isBuffer(file)) {
-            return zipFile(file.length, function (offset, length) {
-                return file.slice(offset, offset + length)
-            }, true);
-        } else throw new Error('Expected file path, fd, or a buffer');
-    }
-};
+}
