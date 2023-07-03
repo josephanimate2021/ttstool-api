@@ -1,24 +1,24 @@
 {
-  "name": "node-zip",
-  "version": "1.0.1",
-  "description": "A Node.JS zip file interpreter",
+  "name": "ttstool-api",
+  "version": "0.0.1",
+  "description": "An open source Text To Speech API",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node test.js"
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:josephanimate2021/node-zip.git"
+    "url": "git@github.com:josephanimate2021/ttstool-api.git"
   },
   "keywords": [
     "Node.JS",
-    "zip",
-    "PKZIP"
+    "tts",
+    "api"
   ],
   "author": "josephanimate2021",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/josephanimate2021/node-zip/issues"
+    "url": "https://github.com/josephanimate2021/ttstool-api/issues"
   },
-  "homepage": "https://github.com/josephanimate2021/node-zip"
+  "homepage": "https://github.com/josephanimate2021/ttstool-api"
 }
