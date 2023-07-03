@@ -14,8 +14,8 @@ A Text To Speech Api that you can use in your app
     let voices;
     ttstool.getVoices().then(inf => voices = inf);
     // generate an mp3 file from the user's text and voice lang.
-    async function genMp3(voiceLang, text) {
-        return await ttstool.genMp3(voiceLang, text);
+    async function genMp3(voiceName, text) {
+        return await ttstool.genMp3(voiceName, text);
     }
 ```
 
