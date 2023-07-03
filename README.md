@@ -9,13 +9,13 @@ A Text To Speech Api that you can use in your app
 ## Usage
 
 ```js
-    const ttstool = require("ttstool-api");
+    const tts = require("ttstool-api");
     // get the voices
     let info;
-    ttstool.getVoices().then(inf => info = inf);
+    tts.getVoices().then(inf => info = inf);
     // generate an mp3 buffer from the user's text and voice name.
     async function genMp3(voiceName, text) {
-        return await ttstool.genMp3(voiceName, text);
+        return await tts.genMp3(voiceName, text);
     }
 ```
 
