@@ -304,7 +304,7 @@ module.exports = {
                         }
                 });
         },
-        genMp3(voiceName, text) {
+        genMp3(voiceName, text, readStream = false) {
                 return new Promise(async (res, rej) => {
                         try {
                                 const info = await this.getVoices();
@@ -326,11 +326,13 @@ module.exports = {
                                                                 "Content-Type": "audio/mp3"
                                                         }
 						}, (r) => {
-							let buffers = [];
-							r
-                                                                .on("data", (b) => buffers.push(b))
-                                                                .on("end", () => res(Buffer.concat(buffers)))
-                                                                .on("error", rej);
+							if (!readStream) {
+								let buffers = [];
+								r
+									.on("data", (b) => buffers.push(b))
+									.on("end", () => res(Buffer.concat(buffers)))
+									.on("error", rej);
+							} else res(r);
                                                 }).on("error", rej);
                                         });
                                 }).end(JSON.stringify([
