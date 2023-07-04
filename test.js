@@ -19,6 +19,7 @@ tts.getVoices().then(inf => { // get the voices
                                         const writeStream = fs.createWriteStream(`./files/${keys[i]}-stream.mp3`);
                                         if (typeof stream.on == "function") stream.pipe(writeStream);
                                         else writeStream.end(stream);
+                                        writeStream.on("close", async () => console.log("All tests are completed successfuly!"));
                                 }
                         }).catch(console.error);
                 }
