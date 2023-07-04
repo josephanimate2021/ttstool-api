@@ -14,8 +14,8 @@ A Text To Speech Api that you can use in your app
     let info;
     tts.getVoices().then(inf => info = inf);
     // generate an mp3 buffer from the user's text and voice name.
-    async function genMp3(voiceName, text) {
-        return await tts.genMp3(voiceName, text);
+    async function genMp3(voiceName, text, readStream = false) {
+        return await tts.genMp3(voiceName, text, readStream);
     }
 ```
 
