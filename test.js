@@ -4,7 +4,7 @@ tts.getVoices().then(inf => { // get the voices
         console.log(inf);
         if (inf) {
                 const keys = Object.keys(inf.voices);
-                for (let i = 0; i < 5; i++) { // limit is set to 5 because ttstool cannot handle more than 8 requests.
+                for (let i = 0; i < 5; i++) { // limit is set to 5 because ttstool cannot handle more than 5 requests.
                         tts.genMp3(keys[i], 'test').then(buffer => { // generate an mp3 buffer
                                 console.log(buffer);
                                 if (buffer) {
