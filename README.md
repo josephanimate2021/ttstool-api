@@ -19,3 +19,9 @@ A Text To Speech Api that you can use in your app
     }
 ```
 
+## Apps that uses the TTS Tool Api
+
+#1: Go2015
+
+#2: Wrapper: Offline (Soon)
+
