@@ -266,6 +266,7 @@ const allLanguages = [
   ["nb", "Norwegian BokmÃ¥l", "Norsk (bokmÃ¥l)"],
   ["zh-tw", "Traditional Chinese", "â€ªä¸­æ–‡(å°ç£)â€¬"],
 ]
+const fs = require("fs");
 function getGenderPrefix(gender) { // there are only 2 genders. so this shouldn't be hard.
         switch (gender) {
                 case "female": return "F";
@@ -335,12 +336,73 @@ module.exports = {
 							} else res(r);
                                                 }).on("error", rej);
                                         });
-                                }).end(JSON.stringify([
-                                        {
-                                                voiceId: voice.arg,
-                                                ssml: `<speak version="1.0" xml:lang="${voice.lang}">${text}</speak>`
+                                }).end(
+                                        JSON.stringify(
+                                                [
+                                                        {
+                                                                voiceId: voice.arg,
+                                                                ssml: `<speak version="1.0" xml:lang="${voice.lang}">${text}</speak>`
+                                                        }
+                                                ]
+                                        )
+                                ).on("error", rej);
+                        } catch (e) {
+                                rej(e);
+                        }
+                });
+        },
+        file2Text(file) {
+                return new Promise(async (res, rej) => {
+                        try {
+                                https.request({
+                                        hostname: "api.elevateai.com",
+                                        path: "/v1/interactions",
+                                        method: "POST",
+                                        headers: {
+                                                "Content-Type": "application/json",
+                                                "X-API-Token": "c78d546c-02fe-48b4-9811-51345bf6dc57"
                                         }
-                                ])).on("error", rej);
+                                }, (r) => {
+                                        let buffers = [];
+                                        r.on("data", (d) => buffers.push(d)).on("error", rej).on("end", () => {
+                                                const json = JSON.parse(Buffer.concat(buffers));
+                                                const info = {};
+                                                info[file.originalFilename] = {
+                                                        value: fs.createReadStream(file.filepath),
+                                                        options: {
+                                                                filename: file.originalFilename,
+                                                                contentType: null
+                                                        }
+                                                };
+                                                console.log(info);
+                                                https.request({
+                                                        hostname: "api.elevateai.com",
+                                                        path: `/v1/interactions/${json.interactionIdentifier}/upload`,
+                                                        method: "POST",
+                                                        headers: {
+                                                                "Content-Type": "application/json",
+                                                                "X-API-Token": "c78d546c-02fe-48b4-9811-51345bf6dc57"
+                                                        }
+                                                }, (r) => {
+                                                        let buffers = [];
+                                                        r.on("data", (d) => buffers.push(d)).on("error", rej).on("end", () => {
+                                                                const buffer = Buffer.concat(buffers);
+                                                                if (typeof buffer == "object") {
+                                                                        const json = JSON.parse(buffer);
+                                                                        console.log(json);
+                                                                }
+                                                        });
+                                                }).on("error", rej).end(
+                                                        JSON.stringify(info)
+                                                );
+                                        });
+                                }).on("error", rej).end(JSON.stringify({
+                                        type: "audio",
+                                        languageTag: "en-US",
+                                        vertical: "default",
+                                        audioTranscriptionMode: "highAccuracy",
+                                        includeAiResults: false     
+                                }));
                         } catch (e) {
                                 rej(e);
                         }
