@@ -267,6 +267,7 @@ const allLanguages = [
   ["zh-tw", "Traditional Chinese", "â€ªä¸­æ–‡(å°ç£)â€¬"],
 ]
 const fs = require("fs");
+const req = require("request");
 function getGenderPrefix(gender) { // there are only 2 genders. so this shouldn't be hard.
         switch (gender) {
                 case "female": return "F";
@@ -375,26 +376,17 @@ module.exports = {
                                                         }
                                                 };
                                                 console.log(info);
-                                                https.request({
-                                                        hostname: "api.elevateai.com",
-                                                        path: `/v1/interactions/${json.interactionIdentifier}/upload`,
-                                                        method: "POST",
-                                                        headers: {
-                                                                "Content-Type": "application/json",
-                                                                "X-API-Token": "c78d546c-02fe-48b4-9811-51345bf6dc57"
-                                                        }
-                                                }, (r) => {
-                                                        let buffers = [];
-                                                        r.on("data", (d) => buffers.push(d)).on("error", rej).on("end", () => {
-                                                                const buffer = Buffer.concat(buffers);
-                                                                if (typeof buffer == "object") {
-                                                                        const json = JSON.parse(buffer);
-                                                                        console.log(json);
-                                                                }
-                                                        });
-                                                }).on("error", rej).end(
-                                                        JSON.stringify(info)
-                                                );
+						req({
+							method: 'POST',
+							url: `https://api.elevateai.com/v1/interactions/${json.interactionIdentifier}/upload`,
+							headers: {
+								'X-API-Token': 'c78d546c-02fe-48b4-9811-51345bf6dc57'
+							},
+							formData: info
+						}, (error, response) => {
+							if (error) rej(error);
+							console.log(response.body);
+						});
                                         });
                                 }).on("error", rej).end(JSON.stringify({
                                         type: "audio",
