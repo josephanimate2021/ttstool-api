@@ -377,12 +377,8 @@ module.exports = {
         },
         file2Text(file) { // converts a file into text
                 return new Promise(async (res, rej) => {
-			const allowedFilePaths = {
-				path: true,
-				filepath: true
-			};
 			if (!file) rej("You need a file in order to do this opperation.");
-			else if (!file.originalFilename || !allowedFilePaths[file]) rej("Missing one or more file fields.");
+			else if (!file.originalFilename || !file.path && !file.filepath) rej("Missing one or more file fields.");
                         else try {
                                 https.request({
                                         hostname: "api.elevateai.com",
@@ -450,21 +446,26 @@ module.exports = {
                                                                 }, (error, response) => {
                                                                         if (error) rej(error);
                                                                         else if (typeof response.body == "string") {
-                                                                                const json = JSON.parse(response.body);
-                                                                                let hasPhrases = false;
-                                                                                let hasPhrases2 = false;
-                                                                                for (const _phase of json.participantOne.phrases) {
-                                                                                        hasPhrases = true;
+                                                                                try {
+                                                                                        const json = JSON.parse(response.body);
+                                                                                        let hasPhrases = false;
+                                                                                        let hasPhrases2 = false;
+                                                                                        for (const _phase of json.participantOne.phrases) {
+                                                                                                hasPhrases = true;
+                                                                                        }
+                                                                                        for (const _phase of json.participantTwo.phrases) {
+                                                                                                hasPhrases2 = true;
+                                                                                        }
+                                                                                        if (!hasPhrases) rej('Your audio file must be a tts file.');
+                                                                                        else if (!hasPhrases2) {
+                                                                                                const phase = json.participantOne.phrases.join(" ")
+                                                                                                        .toLowerCase();
+                                                                                                res(phase);
+                                                                                        } else rej(`Your tts file cannot have more than one 
+                                                                                                   participant talking.`);
+                                                                                } catch (e) {
+                                                                                        rej(e);
                                                                                 }
-                                                                                for (const _phase of json.participantTwo.phrases) {
-                                                                                        hasPhrases2 = true;
-                                                                                }
-                                                                                if (!hasPhrases) rej('Your audio file must be a tts file.');
-                                                                                else if (!hasPhrases2) {
-                                                                                        const phase = json.participantOne.phrases.join(" ")
-                                                                                                .toLowerCase();
-                                                                                        res(phase);
-                                                                                } else rej('Your tts file cannot have more than one participant talking.');
                                                                         } else rej(response.body);
                                                                 });
                                                         }
