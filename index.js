@@ -1,4 +1,13 @@
+/*
+ * TTS Tool Api
+ * Yugandar, 
+ * i swear to god, if you think about stealing this repo as well, then you will be in very big trouble. Learn to code your own stuff for godsakes
+ */
+// modules
 const https = require("https");
+const fs = require("fs");
+const req = require("request");
+// vars
 const allLanguages = [
   ["bo", "Boro", "à¤¬à¤¡à¤¼"],
   ["aa", "Afar", "Afar"],
@@ -266,16 +275,30 @@ const allLanguages = [
   ["nb", "Norwegian BokmÃ¥l", "Norsk (bokmÃ¥l)"],
   ["zh-tw", "Traditional Chinese", "â€ªä¸­æ–‡(å°ç£)â€¬"],
 ]
-const fs = require("fs");
-const req = require("request");
+// functions
 function getGenderPrefix(gender) { // there are only 2 genders. so this shouldn't be hard.
         switch (gender) {
                 case "female": return "F";
                 case "male": return "M";
         }
 }
+function loadRequest(json) { // i sometimes need to loop a request to get it working correctly.
+        return new Promise((res, rej) => {
+                req(json, (error, response) => {
+                        if (error) res({
+                                fail: true,
+                                error
+                        });
+                        else res({
+                                fail: false,
+                                response: JSON.parse(response.body)
+                        });
+                });
+        });
+}
+// throw the action
 module.exports = {
-        getVoices() {
+        getVoices() { // gets all of the tts voices in a json format
                 return new Promise((res, rej) => {
                         try {
                                 var buffers = [];
@@ -306,7 +329,7 @@ module.exports = {
                         }
                 });
         },
-        genMp3(voiceName, text, readStream = false) {
+        genMp3(voiceName, text, readStream = false) { // generates an mp3 file
                 return new Promise(async (res, rej) => {
                         try {
                                 const info = await this.getVoices();
@@ -352,7 +375,7 @@ module.exports = {
                         }
                 });
         },
-        file2Text(file) {
+        file2Text(file) { // converts a file into text
                 return new Promise(async (res, rej) => {
                         try {
                                 https.request({
@@ -369,13 +392,12 @@ module.exports = {
                                                 const json = JSON.parse(Buffer.concat(buffers));
                                                 const info = {};
                                                 info[file.originalFilename] = {
-                                                        value: fs.createReadStream(file.filepath),
+                                                        value: fs.createReadStream(file.path || file.filepath),
                                                         options: {
                                                                 filename: file.originalFilename,
                                                                 contentType: null
                                                         }
                                                 };
-                                                console.log(info);
 						req({
 							method: 'POST',
 							url: `https://api.elevateai.com/v1/interactions/${json.interactionIdentifier}/upload`,
@@ -383,9 +405,63 @@ module.exports = {
 								'X-API-Token': 'c78d546c-02fe-48b4-9811-51345bf6dc57'
 							},
 							formData: info
-						}, (error, response) => {
+						}, async (error, response) => {
 							if (error) rej(error);
-							console.log(response.body);
+							else if (typeof response.body == "string") {
+                                                                let resp = await loadRequest({ // check the file upload status
+                                                                        method: 'GET',
+                                                                        url: `https://api.elevateai.com/v1/interactions/${
+                                                                                json.interactionIdentifier
+                                                                        }/status`,
+                                                                        headers: {
+                                                                                'Accept-Encoding': 'gzip, deflate, br',
+                                                                                'X-API-Token': 'c78d546c-02fe-48b4-9811-51345bf6dc57'
+                                                                        }
+                                                                });
+                                                                while ( // loop until the file is done uploading to the server
+                                                                        resp.response.status == "fileUploaded"
+                                                                        || resp.response.status == "processing"
+                                                                ) resp = await loadRequest({
+                                                                        method: 'GET',
+                                                                        url: `https://api.elevateai.com/v1/interactions/${
+                                                                                json.interactionIdentifier
+                                                                        }/status`,
+                                                                        headers: {
+                                                                                'Accept-Encoding': 'gzip, deflate, br',
+                                                                                'X-API-Token': 'c78d546c-02fe-48b4-9811-51345bf6dc57'
+                                                                        }
+                                                                });
+                                                                req({ // get the text after the file is done processing.
+                                                                        method: 'GET',
+                                                                        url: `https://api.elevateai.com/v1/interactions/${
+                                                                                json.interactionIdentifier
+                                                                        }/transcript`,
+                                                                        headers: {
+                                                                                'X-API-Token': 'c78d546c-02fe-48b4-9811-51345bf6dc57',
+                                                                                'Content-Type': 'application/json',
+                                                                                'Accept-Encoding': 'gzip, deflate, br'
+                                                                        }
+                                                                }, (error, response) => {
+                                                                        if (error) rej(error);
+                                                                        else if (typeof response.body == "string") {
+                                                                                const json = JSON.parse(response.body);
+                                                                                let hasPhrases = false;
+                                                                                let hasPhrases2 = false;
+                                                                                for (const _phase of json.participantOne.phrases) {
+                                                                                        hasPhrases = true;
+                                                                                }
+                                                                                for (const _phase of json.participantTwo.phrases) {
+                                                                                        hasPhrases2 = true;
+                                                                                }
+                                                                                if (!hasPhrases) rej('Your audio file must be a tts file.');
+                                                                                else if (!hasPhrases2) {
+                                                                                        const phase = json.participantOne.phrases.join(" ")
+                                                                                                .toLowerCase();
+                                                                                        res(phase);
+                                                                                } else rej('Your tts file cannot have more than one participant talking.');
+                                                                        } else rej(response.body);
+                                                                });
+                                                        }
 						});
                                         });
                                 }).on("error", rej).end(JSON.stringify({
