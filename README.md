@@ -17,6 +17,10 @@ A Text To Speech Api that you can use in your app
     async function genMp3(voiceName, text, readStream = false) {
         return await tts.genMp3(voiceName, text, readStream);
     }
+    // convert a tts file into some text.
+    async function file2Text(file) {
+        return await tts.file2Text(file);
+    }
 ```
 
 ## Apps that uses the TTS Tool Api
