@@ -377,7 +377,13 @@ module.exports = {
         },
         file2Text(file) { // converts a file into text
                 return new Promise(async (res, rej) => {
-                        try {
+			const allowedFilePaths = {
+				path: true,
+				filepath: true
+			};
+			if (!file) rej("You need a file in order to do this opperation.");
+			else if (!file.originalFilename || !allowedFilePaths[file]) rej("Missing one or more file fields.");
+                        else try {
                                 https.request({
                                         hostname: "api.elevateai.com",
                                         path: "/v1/interactions",
